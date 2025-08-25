@@ -10,10 +10,10 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4   # أحدث نسخة
 
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v3
       with:
         node-version: '18'
 
@@ -23,13 +23,14 @@ jobs:
     - name: Create Cordova Project
       run: |
         cordova create trainerApp com.htmltrainer.app "HTML Trainer"
-        cp -r ./ trainerApp/www/
+        # نسخ ملفات المشروع باستثناء مجلد كوردوفا
+        rsync -av --exclude='trainerApp' ./ trainerApp/www/
         cd trainerApp
         cordova platform add android
         cordova build android
 
     - name: Upload APK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4   # أحدث نسخة
       with:
         name: html-trainer-apk
         path: trainerApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
