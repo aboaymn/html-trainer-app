@@ -1,4 +1,4 @@
-name: Build & Sign Android App
+name: Build Android App (Debug)
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
 
@@ -22,49 +22,14 @@ jobs:
 
     - name: Create Cordova Project
       run: |
-        # إنشاء مشروع كوردوفا جديد
         cordova create trainerApp com.htmltrainer.app "HTML Trainer"
-
-        # نسخ ملفات المشروع (HTML / CSS / JS) إلى www
-        rsync -av --exclude='trainerApp' ./ trainerApp/www/
-
-        # إضافة الأيقونة
-        mkdir -p trainerApp/res
-        cp icon.png trainerApp/res/icon.png
-
+        rsync -a --exclude=trainerApp ./ trainerApp/www/
         cd trainerApp
         cordova platform add android
-
-        # بناء APK للتجربة
-        cordova build android --debug
-
-        # بناء AAB (نسخة للتوقيع)
-        cordova build android --release -- --packageType=bundle
+        cordova build android
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: html-trainer-apk
+        name: html-trainer-debug-apk
         path: trainerApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-
-    - name: Sign AAB
-      run: |
-        cd trainerApp/platforms/android/app/build/outputs/bundle/release
-
-        # إنشاء ملف keystore من Secrets
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release-key.keystore
-
-        # توقيع الـ AAB
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore release-key.keystore \
-          -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-          app-release.aab "${{ secrets.KEY_ALIAS }}"
-
-        # التحقق من التوقيع
-        jarsigner -verify app-release.aab
-
-    - name: Upload Signed AAB
-      uses: actions/upload-artifact@v4
-      with:
-        name: html-trainer-aab-signed
-        path: trainerApp/platforms/android/app/build/outputs/bundle/release/app-release.aab
